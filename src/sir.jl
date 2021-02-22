@@ -5,7 +5,8 @@ SIR = Model{StateSIR}()
 add_path!(SIR, :S, :I)
 add_path!(SIR, :I, :R)
 
-function infect!(i::Individual{StateSIR}, m::Model{StateSIR}, t::Number, source::Number)
-    i.state = State(:I, t, source)
-    i.exposure = i.state
+function infect!(i::Individual{StateSIR}, t::Number, source::Number)
+    i.state = State(StateSIR(:I), t, source)
+    i.infection = i.state
+    assign_event_location!(infection(i), transitions(i))
 end

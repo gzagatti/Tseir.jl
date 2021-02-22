@@ -1,5 +1,8 @@
 abstract type StateType{T <: Integer} <: Enum{T} end
 
+function exposed end
+function infectious end
+
 """
     @states StateTypeName[::BaseType] state1[=x] state2[=y]
 
@@ -125,8 +128,8 @@ macro states(T::Union{Symbol,Expr}, syms...)
             return $(esc(typename))($(esc(valuemap))[x])
         end
         Base.convert(::Type{$(esc(typename))}, x::Symbol) = $(esc(typename))(x)
-        $(esc(:exposed))(x::$(esc(typename))) = $(basetype)(x) in $(esc(exposed))
-        $(esc(:infectious))(x::$(esc(typename))) = $(basetype)(x) in $(esc(infectious))
+        Tseir.exposed(x::$(esc(typename))) = $(basetype)(x) in $(esc(exposed))
+        Tseir.infectious(x::$(esc(typename))) = $(basetype)(x) in $(esc(infectious))
     end
     push!(blk.args, :nothing)
     blk.head = :toplevel
@@ -147,19 +150,45 @@ Base.time(S::State) = S.time
 Base.time(::Nothing) = typemax(Int32)
 
 location(S::State) = S.location
+location(::Nothing) = typemax(Int32)
+
 source(S::State) = S.source
+source(::Nothing) = typemax(Int32)
+
 migration(S::State) = S.migration
+migration(::Nothing) = typemax(Int32)
 
-
-function State(type::StateType)
-    return State(type, typemax(Int32), typemax(Int32), typemax(Int32))
+function Base.show(io::IO, s::State{T}) where {T <: StateType}
+   print(io,
+      "State{", T,
+      "}(type=", s.type,
+      ", time=", s.time,
+      ", location=", s.location,
+      ", source=", s.source,
+      ", migration=", s.migration, ")"
+   )
 end
 
-function State(type::StateType, time::Int32)
+function Base.:(==)(x::State, y::State)
+   out = (
+      (x.type == y.type) &&
+      (x.time == y.time) &&
+      (x.location == y.location) &&
+      (x.source == y.source) &&
+      (x.migration == y.migration)
+   )
+   return out
+end
+
+function State(type::T) where {T <: StateType}
+    return State(type, typemax(Int32), typemax(Int32), typemax(Int32), typemax(Int32))
+end
+
+function State(type::T, time::Int32) where {T <: StateType}
     return State(type, time, typemax(Int32), typemax(Int32), typemax(Int32))
 end
 
-function State(type::StateType, time::Int32, source::Int32)
+function State(type::T, time::Int32, source::Int32) where {T <: StateType}
     return State(type, time, typemax(Int32), source, typemax(Int32))
 end
 
@@ -173,7 +202,7 @@ function assign_event_location!(state::State, transitions::Array{Interval})
 
     while lo < hi
         mid = (lo + hi) >> 1
-        if (transitions[mid].event_end >= t)
+        if (transitions[mid]._end >= t)
             hi = mid
         else
             lo = mid + 1

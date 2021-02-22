@@ -89,8 +89,8 @@ end
 
 Return the intervent distribution given model `m` and state `s`.
 """
-function interevent_distribution(m::Model{T}, state::State{T}) where {T <: StateType}
-   return model.interevent_time[type(state)]
+function interevent_distribution(m::Model{T}, s::T) where {T <: StateType}
+   return m.interevent_distribution[s]
 end
 
 """
@@ -98,12 +98,12 @@ end
 
 Returns the next type given model `m` rules for moving from state `s`.
 """
-function next_state_type(m::Model{T}, state::State{T}) where {T <: StateType}
-   (states, weights) = m.dag[state]
+function next_state_type(m::Model{T}, s::T) where {T <: StateType}
+   (s, weights) = m.dag[s]
    if size(weights) == (1,) 
-      return states[1]
+      return s[1]
    end
-   return sample(state, weights)
+   return sample(s, weights)
 end
 
 """
@@ -114,23 +114,23 @@ Returns the next state given model `m` rules for moving from state `s`.
 If no time `t` and `source`, the next state time is sampled accordingly.
 """
 function advance(m::Model, s::State)
-   return State(next_state_type(m, s), rand(m, s))
+   return State(next_state_type(m, type(s)), rand(m, s))
 end
 
 function advance(m::Model, s::State, t::Int32, source::Int32)
-   return State(next_state_type(m, s), t, source)
+   return State(next_state_type(m, type(s)), t, source)
 end
 
 struct SamplerModel{T <: StateType} <: Sampler{Float64}
-m::Model{T}
+   m::Model{T}
    s::State{T}
    support::Union{Array{Interval,1},Nothing}
 end
 
-function Sampler(::Type{<:AbstractRNG}, m::Model{T}, s::State{T}, support::Array{Interval,1}, ::Repetition) where {T <: StateType}
+function Sampler(::Type{<:AbstractRNG}, m::Model{T}, s::State{T}, support::Union{Array{Interval,1}, Nothing}, ::Repetition) where {T <: StateType}
    return SamplerModel{T}(m, s, support)
 end
-Sampler(rng::AbstractRNG, m::Model{T}, s::State{T}, support::Array{Interval,1}, r::Repetition) where {T <: StateType} = Sampler(typeof(rng), m, s, support, r)
+Sampler(rng::AbstractRNG, m::Model{T}, s::State{T}, support::Union{Array{Interval,1}, Nothing}, r::Repetition) where {T <: StateType} = Sampler(typeof(rng), m, s, support, r)
 
 
 """
@@ -142,14 +142,14 @@ If no `support`, the next state time is sampled from continuous time.
 """
 rand
 
-Base.rand(m::Model{T}, s::State{T}) where {T <: StateType} = rand(m.rng, m, s, nothing)
+Base.rand(m::Model{T}, s::State{T}) where {T <: StateType} = rand(m.r, m, s, nothing)
 Base.rand(rng::AbstractRNG, m::Model{T}, s::State{T}) where {T <: StateType} = rand(rng, m, s, nothing)
-Base.rand(m::Model{T}, s::State{T}, support::Array{Interval,1}) where {T <: StateType} = rand(m.rng, m, s)
-function Base.rand(rng::AbstractRNG, m::Model{T}, s::State{T}, support::Array{Interval,1}) where {T <: StateType}
-   return rand(rng, Sampler(rng, m, s, Val(1)))
+Base.rand(m::Model{T}, s::State{T}, support::Array{Interval,1}) where {T <: StateType} = rand(m.r, m, s, support)
+function Base.rand(rng::AbstractRNG, m::Model{T}, s::State{T}, support::Union{Array{Interval,1}, Nothing}) where {T <: StateType}
+   return rand(rng, Sampler(rng, m, s, support, Val(1)))
 end
 
-    function Base.rand(rng::AbstractRNG, sp::SamplerModel{<:StateType})
+function Base.rand(rng::AbstractRNG, sp::SamplerModel{<:StateType})
 
    m = sp.m
    s = sp.s
@@ -187,7 +187,7 @@ end
          support[hi]._end
          - max(time(s), support[hi]._start)
       )
-      + floor(Int32, rand(m, type(s)))
+      + floor(Int32, rand(m.r, d))
    )
 
    # binary search to find wich interval led to the infection
@@ -195,7 +195,7 @@ end
 
    while lo < hi
       mid = (lo + hi) >> 1
-      if (support[mid]._cum >= event_support_time)
+      if (support[mid]._cum >= state_support_time)
          hi = mid
       else
          lo = mid + 1
@@ -207,7 +207,7 @@ end
    end
 
    # convert the state time in terms of the support to the model's clock time
-   state_clock_time = support[hi]._end - (support[hi].cum - state_support_time)
+   state_clock_time = support[hi]._end - (support[hi]._cum - state_support_time)
 
    return state_clock_time
 

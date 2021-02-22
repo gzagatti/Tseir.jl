@@ -10,6 +10,7 @@ mutable struct Individual{T <: StateType}
     id::Int32
 
     state::State{T}
+    previous_state::State{T}
     infection::Union{State{T},Nothing}
 
     transition_stmt::LibPQ.Statement
@@ -22,6 +23,7 @@ mutable struct Individual{T <: StateType}
         self = new{T}()
         self.id = Int32(id)
         self.state = State(typemin(T))
+        self.previous_state = self.state
         self.infection = nothing
         return self
     end
@@ -47,9 +49,9 @@ mutable struct Individual{T <: StateType}
 end
 
 function Base.show(io::IO, i::Individual{T}) where {T <: StateType}
-    print(io, "Individual{", T, "}(", i.id, ", ", state(i), " status, ")
-    if infection_time(i) < typemax(Int32)
-        print(io, infection_time(i), " infection time, ")
+    print(io, "Individual{", T, "}(", i.id, ", ", type(state(i)), " state, ")
+    if time(infection(i)) < typemax(Int32)
+        print(io, time(infection(i)), " infection time, ")
     end
     if isdefined(i, :contact_list)
         print(io, length(i.contact_list), " contact(s) and ")
@@ -95,10 +97,10 @@ function sort_contacts!(i::Individual)
         sort!(intervals, by=i -> i._start)
         cum = intervals[1]._end - intervals[1]._start
         intervals[1] = Interval(intervals[1]._start, intervals[1]._end, cum, typemax(Int32))
-        if length(contacts) > 1
-            for ix in 2:length(contacts)
-                cum = contacts[ix - 1]._cum + (contacts[ix]._end - contacts[ix]._start)
-                contacts[ix] = ContactEvent(contacts[ix]._start, contacts[ix]._end, cum, typemax(Int32))
+        if length(intervals) > 1
+            for ix in 2:length(intervals)
+                cum = intervals[ix - 1]._cum + (intervals[ix]._end - intervals[ix]._start)
+                intervals[ix] = Interval(intervals[ix]._start, intervals[ix]._end, cum, typemax(Int32))
             end
         end
     end
@@ -119,7 +121,7 @@ function cat_transition!(i::Individual, transition_list::Array{Interval})
     if length(transition_list) > 1
         for ix in 2:length(transition_list)
             @assert transition_list[ix - 1]._end <= transition_list[ix]._end
-            @assert transition_list[ix - 1].coord != transition_list[ix]._coord
+            @assert transition_list[ix - 1]._coord != transition_list[ix]._coord
         end
     end
     i.transition_list = transition_list
@@ -178,6 +180,15 @@ function state(i::Individual)
 end
 
 """
+   previous_state(i::Individual)
+
+Get individual `i` previous state.
+"""
+function previous_state(i::Individual)
+    return i.previous_state
+end
+
+"""
    infection(i::Individual)
 
 Get individual `i` exposed state.
@@ -192,7 +203,7 @@ end
 Returns wether individual `i` can be infected.
 """
 function can_infect(i::Individual{T}, m::Model{T}) where {T <: StateType}
-    return i.state in m.susceptible
+    return type(state(i)) in m.susceptible || type(i.previous_state) in m.susceptible
 end
 
 """
@@ -203,16 +214,17 @@ infection parameters.
 """
 function reset!(i::Individual{T}) where {T <: StateType}
     i.state = State(typemin(T))
+    i.previous_state = i.state
     i.infection = nothing
 end
 
 """
-   infect!(i::Individual{T}, m::Model{T}, t::Number, source::Number)
+   infect!(i::Individual{T}, t::Number, source::Number)
 
 Infect individual `i`. What an infection is depends on the `StateType` which
 means the function needs to be defined for each `StateType`.
 """
-function infect!(i::Individual{T}, m::Model{T}, t::Number, source::Number) where {T <: StateType} end
+function infect!(i::Individual{T}, t::Number, source::Number) where {T <: StateType} end
 
 """
    advance!(i::Individual, m::Model, [t::Number, s::Number])
@@ -222,6 +234,7 @@ Advance individual `i` state given model `m`.
 If no time `t` and `source`, the next state time is sampled accordingly.
 """
 function advance!(i::Individual, m::Model)
+    i.previous_state = i.state
     i.state = advance(m, state(i))
     if exposed(type(i.state))
         i.infection = i.state
@@ -229,9 +242,18 @@ function advance!(i::Individual, m::Model)
 end
 
 function advance!(i::Individual, m::Model, t::Number, s::Number)
+    i.previous_state = i.state
     i.state = advance(m, state(i), t, s)
     if exposed(type(i.state))
         i.infection = i.state
     end
 end
 
+"""
+    rewind!(i::Individual)
+
+Rewind individual `i` state.
+"""
+function rewind!(i::Individual)
+    i.state = i.previous_state
+end

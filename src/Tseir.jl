@@ -17,6 +17,7 @@ module Tseir
         Model,
         State,
         StateType,
+        Interval,
 
         # methods for Individual
         reset!,
@@ -31,6 +32,9 @@ module Tseir
         # methods for Population
         lazy_init_population,
         eager_init_population,
+
+        # method for PopulationHeap
+        update!,
 
         # methods for model
         set_rng!,
@@ -50,10 +54,12 @@ module Tseir
         location,
         source,
         migration,
+        assign_event_location!,
 
         # models
         # SI
-        SIR
+        SIR,
+        StateSIR
         # SEIR
 
 

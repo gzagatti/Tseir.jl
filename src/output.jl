@@ -1,4 +1,4 @@
-basetype(::Type{<:Individual{T}}) where {T <: StateType} = T
+basetype(::Individual{T}) where {T <: StateType} = T
 
 """
    collect_results!(results::Dict{Tuple{Int32, Int32,Int32},Float64},
@@ -15,7 +15,7 @@ function collect_results!(results::Dict{Symbol,Dict{K,Float64} where K},
    # have an interval equal to 10 minutes then we round t0 to 16:10:00
     t0 = t0 - (t0 % interval)
     for i in p
-        if state(i) == typemax(basetype(i))
+        if type(state(i)) == typemax(basetype(i))
          # round to the nearest interval from the top, eg. if infection_time is
          # 16:17:35 and we have an interval equal to 10 minutes then we round
          # the infection_time to 16:20:00
@@ -46,7 +46,7 @@ function collect_results!(results::Dict{Symbol,Dict{K,Float64} where K},
 end
 
 """
-   sir_save(path::AbstractString, results::Dict{Tuple{Int32, Int32, Int32}, Float64},
+   save(path::AbstractString, results::Dict{Tuple{Int32, Int32, Int32}, Float64},
       transmission_probability, recovery_rate, N::Integer, seed::Integer)
 
 Save the simulation results as an HDF5 file.

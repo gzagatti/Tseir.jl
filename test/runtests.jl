@@ -12,7 +12,9 @@ using Tseir
 if !coverage
     using Test
     my_tests = [
-        "agents.jl",
+        "individual.jl",
+        "population.jl",
+        "model.jl",
         "simulator.jl"
     ]
 
