@@ -3,7 +3,7 @@ quiet = length(ARGS) > 0 && ARGS[1] == "-q"
 coverage = length(ARGS) > 0 && ARGS[1] == "-c"
 anyerrors = false
 
-if !("$(@__DIR__)/../src"  in LOAD_PATH)
+if !("$(@__DIR__)/../src"   in LOAD_PATH)
     pushfirst!(LOAD_PATH, "$(@__DIR__)/../src")
 end
 

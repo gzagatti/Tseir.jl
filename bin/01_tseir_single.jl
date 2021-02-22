@@ -23,7 +23,7 @@ function main(args)
 
     output_root = (
         args["output"] *
-        "/$(Dates.format(unix2datetime(args["start"]), "yyyy-mm-dd"))_"  *
+        "/$(Dates.format(unix2datetime(args["start"]), "yyyy-mm-dd"))_"   *
         "$(Dates.format(unix2datetime(args["end"]), "yyyy-mm-dd"))"
     )
     mkpath(output_root)
@@ -158,7 +158,7 @@ function cli()
 
     ENV["WIFI_CONN"] =
         "postgres://agens:" *
-        "$(ENV["AGENS_PW"])@0.0.0.0:"  *
+        "$(ENV["AGENS_PW"])@0.0.0.0:"   *
         "$(ENV["AGENS_PORT"])/wifidb"
 
     args["output"] = "$(get(ENV, "HOST_DATA", "/tmp"))/simulations-v4"

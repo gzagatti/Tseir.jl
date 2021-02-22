@@ -103,6 +103,8 @@ macro states(T::Union{Symbol,Expr}, syms...)
             push!(infectious, i)
         end
         i += oneunit(i)
+        isinfectious = false
+        isexposed = false
     end
     blk = quote
         # enum definition

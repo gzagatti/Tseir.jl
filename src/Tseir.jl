@@ -49,7 +49,7 @@ module Tseir
         time,
         location,
         source,
-        migration
+        migration,
 
         # models
         # SI
@@ -64,7 +64,6 @@ module Tseir
     include("./population.jl")
     include("./simulator.jl")
     include("./output.jl")
-    # include("./sir.jl")
-
+    include("./sir.jl")
 
 end

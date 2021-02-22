@@ -1,22 +1,4 @@
-#
-# MODEL
-# =====
-#
-# Define a generic model structure to accomodate different types of dynamics.
-#
-
 using Random: GLOBAL_RNG, AbstractRNG, default_rng, Sampler, Repetition
-
-#
-# DEFINITIONS
-#
-
-mutable struct Model{T <: StateType}
-    r::AbstractRNG
-    susceptible::Set{T}
-    interevent_distribution::Dict{T,Sampleable}
-    dag::Dict{T,NamedTuple{(:states, :weights),Tuple{Array{T,1},Weights}}}
-end
 
 """
    Model{T<:StateType}([r::AbstractRNG])
@@ -30,6 +12,13 @@ end
    between state types. These information should be added after model
    initialization. 
 """
+mutable struct Model{T <: StateType}
+    r::AbstractRNG
+    susceptible::Set{T}
+    interevent_distribution::Dict{T,Sampleable}
+    dag::Dict{T,NamedTuple{(:states, :weights),Tuple{Array{T,1},Weights}}}
+end
+
 function Model{T}(r::AbstractRNG) where {T <: StateType}
     susceptible = Set{T}()
     interevent_distribution = Dict{T,Sampleable}()
@@ -40,6 +29,10 @@ end
 function Model{T}() where {T <: StateType}
     r = default_rng()
     return Model{T}(r)
+end
+
+function Base.show(io::IO, m::Model{T}) where {T <: StateType}
+    print(io, "Model{", T, "}")
 end
 
 """
@@ -69,16 +62,18 @@ end
 Adds the rule to move from `source` to `sink` in model `m`. Weights `w`
 determine the relative odds of moving to each state listed in `sink`.
 """
-function add_path!(m::Model{T}, source::Union{T,Symbol}, sink::Array{Union{T,Symbol},1}, w::AbstractArray{<:Number,1}) where {T <: StateType}
+function add_path!(m::Model{T}, source::Union{T,Symbol}, sink::Union{Array{T,1},Array{Symbol,1}}, w::AbstractArray{<:Number,1}) where {T <: StateType}
     source = convert(T, source)
     sink = convert(Array{T,1}, sink)
+    w = Weights(w)
     size(sink) == size(w) ? nothing : throw(ArgumentError("sink and weights are not the same size."))
-   m.dag[source] = NamedTuple{(:states, :weights),Tuple{Array{T,1},Weights}}((sink, w))
-   if exposed(sink)
-      for state in m.dag[from].states
-         push!(m.susceptible, state)
+    m.dag[source] = NamedTuple{(:states, :weights),Tuple{Array{T,1},Weights}}((sink, w))
+    for s in sink
+      if exposed(s)
+        push!(m.susceptible, source)
+        break
       end
-   end
+    end
 end
 
 function add_path!(m::Model{T}, source::Union{T,Symbol}, sink::Union{T,Symbol}, w::I) where {T <: StateType,I <: Number}
@@ -86,7 +81,7 @@ function add_path!(m::Model{T}, source::Union{T,Symbol}, sink::Union{T,Symbol}, 
 end
 
 function add_path!(m::Model{T}, source::Union{T,Symbol}, sink::Union{T,Symbol}) where {T <: StateType}
-   add_path(m, source, [sink], [1])
+   add_path!(m, source, [sink], [1])
 end
 
 """
@@ -127,7 +122,7 @@ function advance(m::Model, s::State, t::Int32, source::Int32)
 end
 
 struct SamplerModel{T <: StateType} <: Sampler{Float64}
-   m::Model{T}
+m::Model{T}
    s::State{T}
    support::Union{Array{Interval,1},Nothing}
 end
@@ -154,7 +149,7 @@ function Base.rand(rng::AbstractRNG, m::Model{T}, s::State{T}, support::Array{In
    return rand(rng, Sampler(rng, m, s, Val(1)))
 end
 
-function Base.rand(rng::AbstractRNG, sp::SamplerModel{<:StateType})
+    function Base.rand(rng::AbstractRNG, sp::SamplerModel{<:StateType})
 
    m = sp.m
    s = sp.s
@@ -173,7 +168,7 @@ function Base.rand(rng::AbstractRNG, sp::SamplerModel{<:StateType})
 
    while lo < hi
       mid = (lo + hi) >> 1
-      if (support[mid]._end >= time(s))
+            if (support[mid]._end >= time(s))
          hi = mid
       else
          lo = mid + 1
