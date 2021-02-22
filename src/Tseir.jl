@@ -2,43 +2,26 @@ module Tseir
 
     using Base
     using HDF5
-    using Enums
     using Random
     using StatsBase
     using ProgressBars
-    using DataStructures: AbstractMutableHeap
+    using DataStructures:AbstractMutableHeap
+    using Distributions:Sampleable
 
     import LibPQ
     import Core.Intrinsics.bitcast
 
-    include("./individuals.jl")
-    include("./models.jl")
-    include("./output.jl")
-    include("./population.jl")
-    include("./simulator.jl")
-    include("./sir.jl")
-    include("./states.jl")
-
-    export 
-
-        # structures
-        Individual,
+    export Individual,
         Population,
         PopulationHeap,
         Model,
         State,
-        StateType
-
-        # models
-        # SI
-        SIR
-        # SEIR
+        StateType,
 
         # methods for Individual
         reset!,
         advance!,
         infect!,
-
         state,
         infection,
         can_infect,
@@ -49,13 +32,39 @@ module Tseir
         lazy_init_population,
         eager_init_population,
 
-        # methods for StateType, State
-        @states,
+        # methods for model
+        set_rng!,
+        set_interevent_distribution!,
+        add_path!,
+        interevent_distribution,
+        advance,
 
-        type,
+        # methods for StateType
+        @states,
+        exposed,
+        infectious,
+
+        # methods for State
+        type ,
         time,
         location,
         source,
         migration
+
+        # models
+        # SI
+        SIR
+        # SEIR
+
+
+    include("./interval.jl")
+    include("./state.jl")
+    include("./model.jl")
+    include("./individual.jl")
+    include("./population.jl")
+    include("./simulator.jl")
+    include("./output.jl")
+    # include("./sir.jl")
+
 
 end

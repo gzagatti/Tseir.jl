@@ -12,25 +12,25 @@ The random state is initialized according to `seed`.
 function sweep!(p::Population, m::Model, epidemics_start::Number,
    epidemics_end::Number, N::Integer)
 
-   results = Dict(
-      :infection => Dict{Tuple{Int32, Int32, Int32}, Float64}(),
-      :recovery => Dict{Int32, Float64}()
+    results = Dict(
+      :infection => Dict{Tuple{Int32,Int32,Int32},Float64}(),
+      :recovery => Dict{Int32,Float64}()
    )
    # every 10 minutes
-   interval = Int32(600)
+    interval = Int32(600)
 
-   iter = ProgressBar(1:N)
-   set_description(iter, "Sweep:      ")
-   for i in iter
-      i0 = rand(r, p)
-      t0 = rand(r, Int32(epidemics_start):Int32(epidemics_end))
-      sir!(p, i0, t0, transmission_distribution, recovery_distribution, r)
-      collect_results!(results, p, t0, interval, 1/N)
-   end
+    iter = ProgressBar(1:N)
+    set_description(iter, "Sweep:      ")
+    for i in iter
+        i0 = rand(r, p)
+        t0 = rand(r, Int32(epidemics_start):Int32(epidemics_end))
+        sir!(p, i0, t0, transmission_distribution, recovery_distribution, r)
+        collect_results!(results, p, t0, interval, 1 / N)
+    end
 
-   reset!(p)
+    reset!(p)
 
-   return results
+    return results
 
 end
 
@@ -42,21 +42,21 @@ patient `i0` was infected at time `t0`.
 """
 function run!(p::Population, m::Model, i0::Individual, t0::Int32)
 
-   infected = PopulationHeap(Base.By(i->infection_time(i)))
+    infected = PopulationHeap(Base.By(i -> infection_time(i)))
 
    # reset all infection parameters in the population
-   reset!(p)
+    reset!(p)
 
    # get and infect the source
-   infect!(i0, m, t0, typemax(Int32))
-   push!(infected, source)
+    infect!(i0, m, t0, typemax(Int32))
+    push!(infected, source)
 
    # keeping infecting while there are individuals in the heap
-   while length(infected) > 0
-      print("\r")
-      print("Heap size: $(length(infected))")
-      infect_others!(infected, p, transmission_distribution, recovery_distribution, r)
-   end
+    while length(infected) > 0
+        print("\r")
+        print("Heap size: $(length(infected))")
+        infect_others!(infected, p, transmission_distribution, recovery_distribution, r)
+    end
 
 end
 
@@ -72,36 +72,36 @@ able to infect, updating the infected heap accordingly.
 """
 function infect_others!(h::PopulationHeap, p::Population, m::Model)
 
-   i = pop!(h)
+    i = pop!(h)
 
-   while !infectious(i, m)
-      advance!(i, m)
-   end
+    while !infectious(i, m)
+        advance!(i, m)
+    end
 
-   advance_state!(i, m)
-   assign_event_location!(exposure(i), transitions(i))
+    advance_state!(i, m)
+    assign_event_location!(infection(i), transitions(i))
 
-   if time(exposure(i)) == time(state(i))
-      return
-   end
+    if time(infection(i)) == time(state(i))
+        return
+    end
 
-   for (otherid, contact_events) in contacts(i)
-      j = p[otherid]
+    for (otherid, contact_events) in contacts(i)
+        j = p[otherid]
       # contact `j` will only have recovered if it has already been popped
       # from the infected heap. In other words, if its recovery time is earlier
       # than `i` infection time
-      if can_infect(j, m)
-         t = rand(model, infection, contact_events)
-         if t == nothing continue end
+        if can_infect(j, m)
+            t = rand(model, state(j), contact_events)
+            if t == nothing continue end
          # contact `j` can only get infected by `i` before `i` recovers and
          # before it gets infected by anyone else.
-         if ((t <= time(state(i))) & (t <= time(exposure(j))))
-            source = transmission_source(t, i)
-            advance!(j, m, t, source)
-            push!(h, j)
-         end
-      end
-   end
+            if ((t <= time(state(i))) & (t <= time(exposure(j))))
+                source = transmission_source(t, i)
+                advance!(j, m, t, source)
+                push!(h, j)
+            end
+        end
+    end
 
 end
 
@@ -116,28 +116,28 @@ source. On the other hand, if individual `i` migrated to another coordinate
 set, the contagion source will be its previous visited coordinate set.
 """
 function transmission_source(t::Int32, i::Individual)
-   if t <= i.migration_time
-      return i.infection_source
-   end
+    if t <= i.migration_time
+        return i.infection_source
+    end
 
-   transition_list = transitions(i)
+    transition_list = transitions(i)
 
    # binary search to determine the previously visited location.  Since there
    # was a succesfull transmission, the binary search must return an index
    # within the transmission_list. Second, since the transmission time must be
    # later than the migration time, it must be the case that individual `i`
    # transitioned at least once, thus we start our search in position 2.
-   lo = 2; mid = lo; hi = length(transition_list)
+    lo = 2; mid = lo; hi = length(transition_list)
 
-   while lo < hi
-      mid = (lo + hi) >> 1
-      if (transition_list[mid].event_end >= t)
-         hi = mid
-      else
-         lo = mid + 1
-      end
-   end
+    while lo < hi
+        mid = (lo + hi) >> 1
+        if (transition_list[mid].event_end >= t)
+            hi = mid
+        else
+            lo = mid + 1
+        end
+    end
 
-   return transition_list[hi-1].coordset
+    return transition_list[hi - 1].coordset
 
 end

@@ -23,7 +23,7 @@ function main(args)
 
     output_root = (
         args["output"] *
-        "/$(Dates.format(unix2datetime(args["start"]), "yyyy-mm-dd"))_" *
+        "/$(Dates.format(unix2datetime(args["start"]), "yyyy-mm-dd"))_"  *
         "$(Dates.format(unix2datetime(args["end"]), "yyyy-mm-dd"))"
     )
     mkpath(output_root)
@@ -96,20 +96,20 @@ function main(args)
 
     r = PCG.PCGStateOneseq(seed)
     results = Dict(
-      :infection => Dict{Tuple{Int32, Int32, Int32}, Float64}(),
-      :recovery => Dict{Int32, Float64}()
+      :infection => Dict{Tuple{Int32,Int32,Int32},Float64}(),
+      :recovery => Dict{Int32,Float64}()
     )
     n_sweep = 100
-    n_simulation = floor(Int, N/n_sweep)
+    n_simulation = floor(Int, N / n_sweep)
     start = now()
     for ix in 1:n_simulation
         @info "Simulation $ix / $(n_simulation) ($(canonicalize(Dates.CompoundPeriod(now() - start))) elapsed)"
         sweep_results = sir_sweep!(p, epidemics_start, epidemics_end, β, γ, n_sweep, r)
-        for (k, v) in sweep_results[:infection] sweep_results[:infection][k] = v/n_simulation end
-        for (k, v) in sweep_results[:recovery] sweep_results[:recovery][k] = v/n_simulation end
+        for (k, v) in sweep_results[:infection] sweep_results[:infection][k] = v / n_simulation end
+        for (k, v) in sweep_results[:recovery] sweep_results[:recovery][k] = v / n_simulation end
         merge!(+, results[:infection], sweep_results[:infection])
         merge!(+, results[:recovery], sweep_results[:recovery])
-        sir_save(output_path, results, p, β, γ, ix*ix, seed)
+        sir_save(output_path, results, p, β, γ, ix * ix, seed)
         @info "Results saved to: $(output_path)"
         println()
     end
@@ -126,7 +126,7 @@ function cli()
         "--beta", "-b"
             help = "transmission probability (per time units of the model)"
             arg_type = Float64
-            default = 1 / (60*60)
+            default = 1 / (60 * 60)
         "--gamma", "-g"
             help = "recovery rate (per time units of the model)"
             arg_type = Float64
@@ -158,7 +158,7 @@ function cli()
 
     ENV["WIFI_CONN"] =
         "postgres://agens:" *
-        "$(ENV["AGENS_PW"])@0.0.0.0:" *
+        "$(ENV["AGENS_PW"])@0.0.0.0:"  *
         "$(ENV["AGENS_PORT"])/wifidb"
 
     args["output"] = "$(get(ENV, "HOST_DATA", "/tmp"))/simulations-v4"

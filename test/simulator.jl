@@ -1,11 +1,11 @@
-if !("$(@__DIR__)/../src" in LOAD_PATH)
+if !("$(@__DIR__)/../src"  in LOAD_PATH)
     pushfirst!(LOAD_PATH, "$(@__DIR__)/../src")
 end
 
 using Test
 using Tseir
-using DataStructures: extract_all!
-using Distributions: DiscreteUniform
+using DataStructures:extract_all!
+using Distributions:DiscreteUniform
 
 r = Random.GLOBAL_RNG
 
@@ -83,8 +83,8 @@ r = Random.GLOBAL_RNG
             (2, 1, 5, 78, 80),
         ]
         for (i, j, coord, event_start, event_end) in contact_list
-            Tseir.push_contact!(p[i], p[j].id, coord, event_start, event_end)
-        end
+    Tseir.push_contact!(p[i], p[j].id, coord, event_start, event_end)
+end
 
         h = PopulationHeap(Base.By(i -> i.infection_time))
         p[1].infection_time = 50

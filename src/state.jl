@@ -1,13 +1,4 @@
-# STATES
-# ======
-#
-# Here we define the possible states in which an individual can be in.
-#
-"""
-Possible states in which an individual can be in.
-"""
-
-struct StateType <: Enum end
+abstract type StateType{T <: Integer} <: Enum{T} end
 
 """
     @states StateTypeName[::BaseType] state1[=x] state2[=y]
@@ -41,9 +32,13 @@ macro states(T::Union{Symbol,Expr}, syms...)
     seen = Set{Symbol}()
     namemap = Dict{basetype,Symbol}()
     valuemap = Dict{Symbol,basetype}()
+    exposed = Set{basetype}()
+    infectious = Set{basetype}()
     lo = hi = 0
     i = zero(basetype)
     hasexpr = false
+    isexposed = false
+    isinfectious = false
 
     if length(syms) == 1 && syms[1] isa Expr && syms[1].head === :block
         syms = syms[1].args
@@ -64,6 +59,19 @@ macro states(T::Union{Symbol,Expr}, syms...)
             i = convert(basetype, i)
             s = s.args[1]
             hasexpr = true
+        elseif isa(s, Expr) &&
+            (s.head === :ref) &&
+            length(s.args) > 1 && isa(s.args[1], Symbol)
+            for condition in s.args[2:end]
+                if condition === :(:exposed)
+                    isexposed = true
+                elseif condition === :(:infectious)
+                    isinfectious = true
+                else
+                    throw(ArgumentError("invalid condition for StateType $typename, $s; allowed conditions [:exposed, :infectious]"))
+                end
+            end
+            s = s.args[1]
         else
             throw(ArgumentError(string("invalid argument for StateType ", typename, ": ", s)))
         end
@@ -88,16 +96,22 @@ macro states(T::Union{Symbol,Expr}, syms...)
             lo = min(lo, i)
             hi = max(hi, i)
         end
+        if isexposed
+            push!(exposed, i)
+        end
+        if isinfectious
+            push!(infectious, i)
+        end
         i += oneunit(i)
     end
     blk = quote
         # enum definition
         Base.@__doc__(primitive type $(esc(typename)) <: StateType{$(basetype)} $(sizeof(basetype) * 8) end)
         function $(esc(typename))(x::Integer)
-            $(Enums.membershiptest(:x, values)) || Enums.enum_argument_error($(Expr(:quote, typename)), x)
+            $(Base.Enums.membershiptest(:x, values)) || Base.Enums.enum_argument_error($(Expr(:quote, typename)), x)
             return bitcast($(esc(typename)), convert($(basetype), x))
         end
-        Enums.namemap(::Type{$(esc(typename))}) = $(esc(namemap))
+        Base.Enums.namemap(::Type{$(esc(typename))}) = $(esc(namemap))
         Base.typemin(x::Type{$(esc(typename))}) = $(esc(typename))($lo)
         Base.typemax(x::Type{$(esc(typename))}) = $(esc(typename))($hi)
         let insts = (Any[ $(esc(typename))(v) for v in $values ]...,)
@@ -105,17 +119,19 @@ macro states(T::Union{Symbol,Expr}, syms...)
         end
         # additional helpers
         function $(esc(typename))(x::Symbol)
-            $(x in valuemap) || Enums.enum_argument_error($(Expr(:quote, typename)), x)
-            return $(esc(typename))(valuemap[x])
+            (x in keys($(esc(valuemap)))) || Base.Enums.enum_argument_error($(Expr(:quote, typename)), x)
+            return $(esc(typename))($(esc(valuemap))[x])
         end
-        Base.convert(::Type{$(esc(typename))}, x::Symbol) = $(esc(typename))(x::Symbol)
+        Base.convert(::Type{$(esc(typename))}, x::Symbol) = $(esc(typename))(x)
+        $(esc(:exposed))(x::$(esc(typename))) = $(basetype)(x) in $(esc(exposed))
+        $(esc(:infectious))(x::$(esc(typename))) = $(basetype)(x) in $(esc(infectious))
     end
     push!(blk.args, :nothing)
     blk.head = :toplevel
     return blk
 end
 
-mutable struct State{T<:StateType}
+mutable struct State{T <: StateType}
     type::T
     time::Int32
     location::Int32
@@ -134,39 +150,39 @@ migration(S::State) = S.migration
 
 
 function State(type::StateType)
-   return State(type, typemax(Int32), typemax(Int32), typemax(Int32))
+    return State(type, typemax(Int32), typemax(Int32), typemax(Int32))
 end
 
 function State(type::StateType, time::Int32)
-   return State(type, time, typemax(Int32), typemax(Int32), typemax(Int32))
+    return State(type, time, typemax(Int32), typemax(Int32), typemax(Int32))
 end
 
 function State(type::StateType, time::Int32, source::Int32)
-   return State(type, time, typemax(Int32), source, typemax(Int32))
+    return State(type, time, typemax(Int32), source, typemax(Int32))
 end
 
-function assign_event_location!(state::State, transitions::Array{TransitionEvent})
+function assign_event_location!(state::State, transitions::Array{Interval})
 
-   t = time(state)
+    t = time(state)
 
    # binary search on the transition list to find the first
    # coordinate set that the individual visit after getting sick.
-   lo = 1; mid = lo; hi = length(transitions) + 1
+    lo = 1; mid = lo; hi = length(transitions) + 1
 
-   while lo < hi
-      mid = (lo + hi) >> 1
-      if (transitions[mid].event_end >= t)
-         hi = mid
-      else
-         lo = mid + 1
-      end
-   end
+    while lo < hi
+        mid = (lo + hi) >> 1
+        if (transitions[mid].event_end >= t)
+            hi = mid
+        else
+            lo = mid + 1
+        end
+    end
 
-   if hi > length(transitions)
-      return
-   end
+    if hi > length(transitions)
+        return
+    end
 
-   state.location = transitions[hi]._coord
-   state.migration = transitions[hi]._end
+    state.location = transitions[hi]._coord
+    state.migration = transitions[hi]._end
 
 end

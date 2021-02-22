@@ -1,16 +1,15 @@
-
 """
    Population
 
 A population is a set of individuals. We can perform basic set operations
 by passing either an instance of an Individual or its id.
 """
-struct Population{T} <: AbstractSet{Individual{T<:StateType}}
-   dict::Dict{Int32,Individual}
+struct Population{T <: StateType} <: AbstractSet{Individual{T}}
+    dict::Dict{Int32,Individual{T}}
 
-   Population() = new(Dict{Int32,Individual}())
-   Population(p::Array{Individual}) = new(Dict{Int32, Individual}(i.id => i for i in p))
-   Population(p::Population) = new(Dict{Int32,Individual}(i.id => i for i in p)) 
+    Population{T}() where {T <: StateType} = new{T}(Dict{Int32,Individual{T}}())
+    Population(p::Array{Individual{T}}) where {T <: StateType} = new{T}(Dict{Int32,Individual{T}}(i.id => i for i in p))
+    Population(p::Population{T}) where {T <: StateType} = new{T}(Dict{Int32,Individual{T}}(i.id => i for i in p)) 
 end
 
 Base.isempty(p::Population) = isempty(p.dict)
@@ -56,19 +55,19 @@ list of individual transitions and the second returns a list of contact events.
 
 This is an eager initialization as all contacts and transitions are pre-loaded.
 """
-function eager_init_population(transition_stmt::LibPQ.Statement, contact_stmt::LibPQ.Statement)
-   p = Population()
+function eager_init_population(T::Type{<:StateType}, transition_stmt::LibPQ.Statement, contact_stmt::LibPQ.Statement)
+   p = Population{T}()
    iter = ProgressBar(LibPQ.execute(contact_stmt))
    set_description(iter, "Filling contacts:")
    for contact_details in iter
       id, otherid, coord, event_start, event_end = contact_details
       if !(id in p) 
-         i = Individual(id, transition_stmt)
+         i = Individual{T}(id, transition_stmt)
          push!(p, i)
       end
       if !(otherid in p) 
-         other = Individual(otherid, transition_stmt)
-         push!(p, other)
+         other = Individual{T}(otherid, transition_stmt)
+        push!(p, other)
       end
       push_contact!(p[id], otherid, coord, event_start, event_end)
    end
@@ -90,11 +89,11 @@ This is a lazy initialization as individuals are only initialized with contact
 and transition statements. The contact and transition list are only loaded when
 needed.
 """
-function lazy_init_population(id_stmt::LibPQ.Statement, transition_stmt::LibPQ.Statement, contact_stmt::LibPQ.Statement)
-   p = Population()
+function lazy_init_population(T::Type{<:StateType}, id_stmt::LibPQ.Statement, transition_stmt::LibPQ.Statement, contact_stmt::LibPQ.Statement)
+   p = Population{T}()
    for (id,) in LibPQ.execute(id_stmt)
-      i = Individual(id, transition_stmt, contact_stmt)
-      push!(p, i)
+      i = Individual{T}(id, transition_stmt, contact_stmt)
+    push!(p, i)
    end
    return p
 end
@@ -131,7 +130,7 @@ function Base.show(io::IO, h::PopulationHeap)
       for i = 2:n
          print(io, ", $(nodes[i])")
       end
-   end
+end
    print(io, ")")
 end
 
@@ -192,7 +191,7 @@ function update!(h::PopulationHeap, i::Individual)
    nd_id = nodemap[i.id]
    if nd_id > 1
       p_id = nd_id >> 1
-      p = nodes[p_id]
+        p = nodes[p_id]
       if Base.lt(ordering, i, p)
          _heap_bubble_up!(ordering, nodes, nodemap, nd_id)
       else
@@ -222,7 +221,7 @@ end
 
 function _binary_heap_pop!(ord::Base.Ordering, nodes::Vector{Individual},
    nodemap::Dict{Int32,Int}, nd_id::Int=1)
-
+    
    # extract node
    rt = nodes[nd_id]
    @inbounds delete!(nodemap, rt.id)
@@ -254,7 +253,7 @@ function _heap_bubble_up!(ord::Base.Ordering, nodes::Vector{Individual},
    nodemap::Dict{Int32,Int}, nd_id::Int)
 
    @inbounds nd = nodes[nd_id]
-
+    
    swapped = true
    i = nd_id
 
@@ -268,13 +267,13 @@ function _heap_bubble_up!(ord::Base.Ordering, nodes::Vector{Individual},
          @inbounds nodemap[nd_p.id] = i
          i = p
       else
-         swapped = false
+        swapped = false
       end
    end
 
    if i != nd_id
       nodes[i] = nd
-      nodemap[nd.id] = i
+    nodemap[nd.id] = i
    end
 
 end
@@ -286,7 +285,7 @@ function _heap_bubble_down!(ord::Base.Ordering, nodes::Vector{Individual},
 
    n = length(nodes)
    last_parent = n >> 1
-
+    
    swapped = true
    i = nd_id
 

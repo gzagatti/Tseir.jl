@@ -1,11 +1,11 @@
-if !("$(@__DIR__)/../src" in LOAD_PATH)
+if !("$(@__DIR__)/../src"  in LOAD_PATH)
     pushfirst!(LOAD_PATH, "$(@__DIR__)/../src")
 end
 
 using Test
 using Tseir
 using Random
-using Distributions: DiscreteUniform
+using Distributions:DiscreteUniform
 
 r = Random.GLOBAL_RNG
 
@@ -15,16 +15,16 @@ r = Random.GLOBAL_RNG
         individuals = [Individual(id) for id in 1:2]
 
         for ix in 1:length(individuals)
-            @test individuals[ix].id == ix
-            @test individuals[ix].status == Tseir.S
-            @test individuals[ix].infection_time == typemax(Int32)
-            @test individuals[ix].infection_location == typemax(Int32)
-            @test individuals[ix].infection_source == typemax(Int32)
-            @test individuals[ix].migration_time == typemax(Int32)
-            @test individuals[ix].recovery_time == typemax(Int32)
-            @test !isdefined(individuals[ix], :transition_list)
-            @test !isdefined(individuals[ix], :contact_list)
-        end
+    @test individuals[ix].id == ix
+    @test individuals[ix].status == Tseir.S
+    @test individuals[ix].infection_time == typemax(Int32)
+    @test individuals[ix].infection_location == typemax(Int32)
+    @test individuals[ix].infection_source == typemax(Int32)
+    @test individuals[ix].migration_time == typemax(Int32)
+    @test individuals[ix].recovery_time == typemax(Int32)
+    @test !isdefined(individuals[ix], :transition_list)
+    @test !isdefined(individuals[ix], :contact_list)
+end
 
         transition_list = [
            Tseir.TransitionEvent(1, 50, 60),
@@ -44,11 +44,11 @@ r = Random.GLOBAL_RNG
         @test length(individuals[2].transition_list) == 2
 
         for i in individuals
-            for ix in 2:length(i.transition_list)
-                @test i.transition_list[ix-1].event_end < i.transition_list[ix].event_start
-                @test i.transition_list[ix-1].coordset != i.transition_list[ix].coordset
-            end
-        end
+    for ix in 2:length(i.transition_list)
+        @test i.transition_list[ix - 1].event_end < i.transition_list[ix].event_start
+        @test i.transition_list[ix - 1].coordset != i.transition_list[ix].coordset
+    end
+end
 
         i1 = individuals[1]
         i2 = individuals[2]
@@ -62,15 +62,15 @@ r = Random.GLOBAL_RNG
             (i2, i1.id, 1, 50, 55),
         ]
         for (i, otherid, coord, event_start, event_end) in contact_list
-            Tseir.push_contact!(i, otherid, coord, event_start, event_end)
-        end
+    Tseir.push_contact!(i, otherid, coord, event_start, event_end)
+end
 
         for i in individuals
-            Tseir.sort_contacts!(i)
-            for ix in 2:length(i.contact_list)
-                @test i.contact_list[ix-1] <= i.contact_list[ix]
-            end
-        end
+    Tseir.sort_contacts!(i)
+    for ix in 2:length(i.contact_list)
+        @test i.contact_list[ix - 1] <= i.contact_list[ix]
+    end
+end
 
         @test haskey(i1.contact_list, i2.id)
         @test haskey(i2.contact_list, i1.id)
@@ -150,8 +150,8 @@ r = Random.GLOBAL_RNG
         @test length(p) == 0
 
         for i in 1:7
-            push!(p, Individual(i))
-        end
+    push!(p, Individual(i))
+end
 
         @test isempty(p) == false
         @test length(p) == 7
@@ -199,13 +199,13 @@ r = Random.GLOBAL_RNG
         @test length(p) == 2
 
         for i in p
-            i.status = Tseir.I
-        end
+    i.status = Tseir.I
+end
 
         reset!(p)
         for i in p
-            @test i.status == Tseir.S
-        end
+    @test i.status == Tseir.S
+end
 
         empty!(p)
         @test isempty(p) == true
@@ -221,11 +221,11 @@ r = Random.GLOBAL_RNG
         @test length(h) == 0
 
         for id in 1:7
-            i = Individual(id)
-            i.infection_time = floor(Int32, 100/id)
-            push!(p, i)
-            push!(h, i)
-        end
+    i = Individual(id)
+    i.infection_time = floor(Int32, 100 / id)
+    push!(p, i)
+    push!(h, i)
+end
 
         @test isempty(h) == false
         @test length(h) == 7
