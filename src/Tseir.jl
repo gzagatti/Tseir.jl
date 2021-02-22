@@ -57,10 +57,12 @@ module Tseir
         assign_event_location!,
 
         # models
-        # SI
+        SI,
+        StateSI,
         SIR,
-        StateSIR
-        # SEIR
+        StateSIR,
+        SEIR,
+        StateSEIR
 
 
     include("./interval.jl")
@@ -70,6 +72,8 @@ module Tseir
     include("./population.jl")
     include("./simulator.jl")
     include("./output.jl")
-    include("./sir.jl")
+    include("./models/si.jl")
+    include("./models/sir.jl")
+    include("./models/seir.jl")
 
 end
