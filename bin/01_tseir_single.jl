@@ -173,6 +173,7 @@ function main(args)
             save(output_path, results, params)
             @info "Results saved to: $(output_path)"
             @info "Saving final results to database."
+            results[:population] = length(p)
             save(conn, results, params)
             return
         end
