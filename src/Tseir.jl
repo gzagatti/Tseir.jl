@@ -8,10 +8,13 @@ module Tseir
     using DataStructures:AbstractMutableHeap
     using Distributions:Sampleable
 
+    import JSON
     import LibPQ
     import Core.Intrinsics.bitcast
 
-    export Individual,
+    export
+
+        Individual,
         Population,
         PopulationHeap,
         Model,
@@ -55,6 +58,12 @@ module Tseir
         source,
         migration,
         assign_event_location!,
+
+        # excutables
+        run!,
+        sweep!,
+        collect_results!,
+        save,
 
         # models
         SI,

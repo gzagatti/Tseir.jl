@@ -60,7 +60,7 @@ function eager_init_population(T::Type{<:StateType}, transition_stmt::LibPQ.Stat
     iter = ProgressBar(LibPQ.execute(contact_stmt))
     set_description(iter, "Filling contacts:")
     for contact_details in iter
-        id, otherid, coord, event_start, event_end = contact_details
+        id, otherid, interval_start, interval_end = contact_details
         if !(id in p)
             i = Individual{T}(id, transition_stmt)
             push!(p, i)
@@ -69,7 +69,7 @@ function eager_init_population(T::Type{<:StateType}, transition_stmt::LibPQ.Stat
             other = Individual{T}(otherid, transition_stmt)
             push!(p, other)
         end
-        push_contact!(p[id], otherid, coord, event_start, event_end)
+        push_contact!(p[id], otherid, interval_start, interval_end)
     end
     iter = ProgressBar(p)
     set_description(iter, "Sorting contacts: ")
@@ -78,6 +78,7 @@ function eager_init_population(T::Type{<:StateType}, transition_stmt::LibPQ.Stat
     end
     return p
 end
+
 """
     Lazy initialize population
 

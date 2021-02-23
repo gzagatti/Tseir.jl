@@ -10,7 +10,8 @@ For each simulation the disease can strike patient zero any time between
 The random state is initialized according to `seed`.
 """
 function sweep!(p::Population, m::Model, epidemics_start::Number,
-   epidemics_end::Number, N::Integer, save_interval::Number)
+                epidemics_end::Number, N::Integer, save_interval::Number, 
+                i0::Union{Individual, Nothing}=nothing)
 
     results = Dict(
       :infection => Dict{Tuple{Int32,Int32,Int32},Float64}(),
@@ -20,7 +21,9 @@ function sweep!(p::Population, m::Model, epidemics_start::Number,
     iter = ProgressBar(1:N)
     set_description(iter, "Sweep:      ")
     for i in iter
-        i0 = rand(m.r, p)
+        if isnothing(i0)
+            i0 = rand(m.r, p)
+        end
         t0 = rand(m.r, Int32(epidemics_start):Int32(epidemics_end))
         run!(p, m, i0, t0)
         collect_results!(results, p, t0, Int32(save_interval), 1 / N)

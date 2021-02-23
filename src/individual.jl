@@ -29,18 +29,18 @@ mutable struct Individual{T <: StateType}
     end
 
     function Individual{T}(id, transition_list::Array{Interval}) where {T <: StateType}
-        self = Individual(id)
+        self = Individual{T}(id)
         cat_transition!(self, transition_list)
     end
 
     function Individual{T}(id, transition_stmt::LibPQ.Statement) where {T <: StateType}
-        self = Individual(id)
+        self = Individual{T}(id)
         cat_transition!(self, transition_stmt)
         return self
     end
 
     function Individual{T}(id, transition_stmt::LibPQ.Statement, contact_stmt::LibPQ.Statement) where {T <: StateType}
-        self = Individual(id)
+        self = Individual{T}(id)
         self.transition_stmt = transition_stmt
         self.contact_stmt = contact_stmt
         return self
@@ -132,7 +132,8 @@ function cat_transition!(i::Individual, transition_stmt::LibPQ.Statement)
         i.transition_list = Array{Interval,1}()
     end
     for transition in LibPQ.execute(transition_stmt, (i.id,))
-        push!(i.transition_list, Interval(transition...))
+        coord, interval_start, interval_end = transition
+        push!(i.transition_list, Interval(interval_start, interval_end, typemax(Int32), coord))
     end
     sort!(i.transition_list, by=i -> i._start)
 end
@@ -145,7 +146,6 @@ Get individual `i` contact list.
 function contacts(i::Individual)
     if !isdefined(i, :contact_list)
         if isdefined(i, :contact_stmt)
-            i.contact_list = Dict{Int32,Array{Interval}}()
             for contact_details in LibPQ.execute(i.contact_stmt, (i.id,))
                 otherid, interval_start, interval_end = contact_details
                 push_contact!(i, otherid, interval_start, interval_end)
