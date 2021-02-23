@@ -69,19 +69,19 @@ function add_path!(m::Model{T}, source::Union{T,Symbol}, sink::Union{Array{T,1},
     size(sink) == size(w) ? nothing : throw(ArgumentError("sink and weights are not the same size."))
     m.dag[source] = NamedTuple{(:states, :weights),Tuple{Array{T,1},Weights}}((sink, w))
     for s in sink
-      if exposed(s)
-        push!(m.susceptible, source)
-        break
-      end
+        if exposed(s)
+            push!(m.susceptible, source)
+            break
+        end
     end
 end
 
 function add_path!(m::Model{T}, source::Union{T,Symbol}, sink::Union{T,Symbol}, w::I) where {T <: StateType,I <: Number}
-   add_path(m, source, [sink], [w])
+    add_path(m, source, [sink], [w])
 end
 
 function add_path!(m::Model{T}, source::Union{T,Symbol}, sink::Union{T,Symbol}) where {T <: StateType}
-   add_path!(m, source, [sink], [1])
+    add_path!(m, source, [sink], [1])
 end
 
 """
@@ -90,7 +90,7 @@ end
 Return the intervent distribution given model `m` and state `s`.
 """
 function interevent_distribution(m::Model{T}, s::T) where {T <: StateType}
-   return m.interevent_distribution[s]
+    return m.interevent_distribution[s]
 end
 
 """
@@ -99,11 +99,11 @@ end
 Returns the next type given model `m` rules for moving from state `s`.
 """
 function next_state_type(m::Model{T}, s::T) where {T <: StateType}
-   (s, weights) = m.dag[s]
-   if size(weights) == (1,) 
-      return s[1]
-   end
-   return sample(s, weights)
+    (s, weights) = m.dag[s]
+    if size(weights) == (1,) 
+        return s[1]
+    end
+    return sample(s, weights)
 end
 
 """
@@ -114,23 +114,23 @@ Returns the next state given model `m` rules for moving from state `s`.
 If no time `t` and `source`, the next state time is sampled accordingly.
 """
 function advance(m::Model, s::State)
-   return State(next_state_type(m, type(s)), rand(m, s))
+    return State(next_state_type(m, type(s)), rand(m, s))
 end
 
 function advance(m::Model, s::State, t::Int32, source::Int32)
-   return State(next_state_type(m, type(s)), t, source)
+    return State(next_state_type(m, type(s)), t, source)
 end
 
 struct SamplerModel{T <: StateType} <: Sampler{Float64}
-   m::Model{T}
-   s::State{T}
-   support::Union{Array{Interval,1},Nothing}
+    m::Model{T}
+    s::State{T}
+    support::Union{Array{Interval,1},Nothing}
 end
 
-function Sampler(::Type{<:AbstractRNG}, m::Model{T}, s::State{T}, support::Union{Array{Interval,1}, Nothing}, ::Repetition) where {T <: StateType}
-   return SamplerModel{T}(m, s, support)
+function Sampler(::Type{<:AbstractRNG}, m::Model{T}, s::State{T}, support::Union{Array{Interval,1},Nothing}, ::Repetition) where {T <: StateType}
+    return SamplerModel{T}(m, s, support)
 end
-Sampler(rng::AbstractRNG, m::Model{T}, s::State{T}, support::Union{Array{Interval,1}, Nothing}, r::Repetition) where {T <: StateType} = Sampler(typeof(rng), m, s, support, r)
+Sampler(rng::AbstractRNG, m::Model{T}, s::State{T}, support::Union{Array{Interval,1},Nothing}, r::Repetition) where {T <: StateType} = Sampler(typeof(rng), m, s, support, r)
 
 
 """
@@ -145,43 +145,43 @@ rand
 Base.rand(m::Model{T}, s::State{T}) where {T <: StateType} = rand(m.r, m, s, nothing)
 Base.rand(rng::AbstractRNG, m::Model{T}, s::State{T}) where {T <: StateType} = rand(rng, m, s, nothing)
 Base.rand(m::Model{T}, s::State{T}, support::Array{Interval,1}) where {T <: StateType} = rand(m.r, m, s, support)
-function Base.rand(rng::AbstractRNG, m::Model{T}, s::State{T}, support::Union{Array{Interval,1}, Nothing}) where {T <: StateType}
-   return rand(rng, Sampler(rng, m, s, support, Val(1)))
+function Base.rand(rng::AbstractRNG, m::Model{T}, s::State{T}, support::Union{Array{Interval,1},Nothing}) where {T <: StateType}
+    return rand(rng, Sampler(rng, m, s, support, Val(1)))
 end
 
 function Base.rand(rng::AbstractRNG, sp::SamplerModel{<:StateType})
 
-   m = sp.m
-   s = sp.s
-   support = sp.support
-   d = interevent_distribution(m, type(s))
+    m = sp.m
+    s = sp.s
+    support = sp.support
+    d = interevent_distribution(m, type(s))
 
    # if there is no support, the next state time is simply sampled from
    # continuous clock time.
-   if isnothing(support)
-      return time(s) + floor(Int32, rand(rng, d))
-   end
+    if isnothing(support)
+        return time(s) + floor(Int32, rand(rng, d))
+    end
 
    # binary search on the support to find the first interval that occurs
    # after the state
-   lo = 1; mid = lo; hi = length(support) + 1
+    lo = 1; mid = lo; hi = length(support) + 1
 
-   while lo < hi
-      mid = (lo + hi) >> 1
-            if (support[mid]._end >= time(s))
-         hi = mid
-      else
-         lo = mid + 1
-      end
-   end
+    while lo < hi
+        mid = (lo + hi) >> 1
+        if (support[mid]._end >= time(s))
+            hi = mid
+        else
+            lo = mid + 1
+        end
+    end
 
-   if hi > length(support)
-      return
-   end
+    if hi > length(support)
+        return
+    end
 
    # we find the state time in terms of the support. The state will occur in
    # the second following the required amount of time elapses in the support.
-   state_support_time = (
+    state_support_time = (
       support[hi]._cum
       - (
          support[hi]._end
@@ -191,25 +191,25 @@ function Base.rand(rng::AbstractRNG, sp::SamplerModel{<:StateType})
    )
 
    # binary search to find wich interval led to the infection
-   lo = 1; mid = lo; hi = length(support) + 1
+    lo = 1; mid = lo; hi = length(support) + 1
 
-   while lo < hi
-      mid = (lo + hi) >> 1
-      if (support[mid]._cum >= state_support_time)
-         hi = mid
-      else
-         lo = mid + 1
-      end
-   end
+    while lo < hi
+        mid = (lo + hi) >> 1
+        if (support[mid]._cum >= state_support_time)
+            hi = mid
+        else
+            lo = mid + 1
+        end
+    end
 
-   if hi > length(support)
-      return
-   end
+    if hi > length(support)
+        return
+    end
 
    # convert the state time in terms of the support to the model's clock time
-   state_clock_time = support[hi]._end - (support[hi]._cum - state_support_time)
+    state_clock_time = support[hi]._end - (support[hi]._cum - state_support_time)
 
-   return state_clock_time
+    return state_clock_time
 
 end
 

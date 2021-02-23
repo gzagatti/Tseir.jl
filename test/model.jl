@@ -28,7 +28,7 @@ r = Random.GLOBAL_RNG
 
     add_path!(m, :foo, :bar)
     @test Foo(:foo) in keys(m.dag)
-    @test m.dag[Foo(:foo)] == NamedTuple{(:states, :weights), Tuple{Array{Foo, 1}, Weights}}(([Foo(:bar)], Weights([1])))
+    @test m.dag[Foo(:foo)] == NamedTuple{(:states, :weights),Tuple{Array{Foo,1},Weights}}(([Foo(:bar)], Weights([1])))
     @test Foo(:foo) in m.susceptible
 
     set_interevent_distribution!(m, Foo(:foo), DiscreteUniform(1, 1))

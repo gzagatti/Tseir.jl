@@ -68,20 +68,20 @@ r = Random.GLOBAL_RNG
         end
     end
 
-        @test haskey(i1.contact_list, i2.id)
-        @test haskey(i2.contact_list, i1.id)
+    @test haskey(i1.contact_list, i2.id)
+    @test haskey(i2.contact_list, i1.id)
 
-        @test i1.contact_list[i2.id][1]._start == 50
-        @test i1.contact_list[i2.id][1]._end == 55
-        @test i1.contact_list[i2.id][1]._cum == 5
+    @test i1.contact_list[i2.id][1]._start == 50
+    @test i1.contact_list[i2.id][1]._end == 55
+    @test i1.contact_list[i2.id][1]._cum == 5
 
-        @test i1.contact_list[i2.id][2]._start == 75
-        @test i1.contact_list[i2.id][2]._end == 77
-        @test i1.contact_list[i2.id][2]._cum == 7
+    @test i1.contact_list[i2.id][2]._start == 75
+    @test i1.contact_list[i2.id][2]._end == 77
+    @test i1.contact_list[i2.id][2]._cum == 7
 
-        @test i1.contact_list[i2.id][3]._start == 78
-        @test i1.contact_list[i2.id][3]._end == 80
-        @test i1.contact_list[i2.id][3]._cum == 9
+    @test i1.contact_list[i2.id][3]._start == 78
+    @test i1.contact_list[i2.id][3]._end == 80
+    @test i1.contact_list[i2.id][3]._cum == 9
 
     i1.state = State(typemax(Foo), Int32(10), Int32(5))
     i1.infection = i1.state

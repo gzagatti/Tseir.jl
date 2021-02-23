@@ -121,16 +121,16 @@ function cli()
     s = ArgParseSettings()
     @add_arg_table s begin
         "--env-file", "-e"
-            help = "environment file with database connection settings and path to host data."
-            default = realpath("$(@__DIR__)/../../.env")
+        help = "environment file with database connection settings and path to host data."
+        default = realpath("$(@__DIR__)/../../.env")
         "--beta", "-b"
-            help = "transmission probability (per time units of the model)"
-            arg_type = Float64
-            default = 1 / (60 * 60)
+        help = "transmission probability (per time units of the model)"
+        arg_type = Float64
+        default = 1 / (60 * 60)
         "--gamma", "-g"
-            help = "recovery rate (per time units of the model)"
-            arg_type = Float64
-            default = 1 / (14 * 24 * 60 * 60)
+        help = "recovery rate (per time units of the model)"
+        arg_type = Float64
+        default = 1 / (14 * 24 * 60 * 60)
         "--start"
             help = "epidemics start, formatted as y-m-d H:M:S"
             default = "2020-01-13 00:00:00"

@@ -13,7 +13,7 @@ r = Random.GLOBAL_RNG
 function simple_pop()
     p = Population([Individual{StateSIR}(id) for id in 1:2])
     p[1].transition_list = [
-        Interval(50, 60, typemax(Int32),1),
+        Interval(50, 60, typemax(Int32), 1),
         Interval(70, 80, typemax(Int32), 2),
         Interval(85, 99, typemax(Int32), 1),
     ]

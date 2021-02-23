@@ -159,7 +159,7 @@ migration(S::State) = S.migration
 migration(::Nothing) = typemax(Int32)
 
 function Base.show(io::IO, s::State{T}) where {T <: StateType}
-   print(io,
+    print(io,
       "State{", T,
       "}(type=", s.type,
       ", time=", s.time,
@@ -170,14 +170,14 @@ function Base.show(io::IO, s::State{T}) where {T <: StateType}
 end
 
 function Base.:(==)(x::State, y::State)
-   out = (
+    out = (
       (x.type == y.type) &&
       (x.time == y.time) &&
       (x.location == y.location) &&
       (x.source == y.source) &&
       (x.migration == y.migration)
    )
-   return out
+    return out
 end
 
 function State(type::T) where {T <: StateType}
