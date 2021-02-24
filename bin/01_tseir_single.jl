@@ -162,7 +162,8 @@ function main(args)
 
     results = Dict(
       :infection => Dict{Tuple{Int32,Int32,Int32},Float64}(),
-      :recovery => Dict{Int32,Float64}()
+      :recovery => Dict{Int32,Float64}(),
+      :population => length(p)
     )
 
     if !isnothing(i0)
@@ -173,7 +174,6 @@ function main(args)
             save(output_path, results, params)
             @info "Results saved to: $(output_path)"
             @info "Saving final results to database."
-            results[:population] = length(p)
             save(conn, results, params)
             return
         end
@@ -197,7 +197,6 @@ function main(args)
     end
 
     @info "Saving final results to database."
-    results[:population] = length(p)
     save(conn, results, params)
 
 end
