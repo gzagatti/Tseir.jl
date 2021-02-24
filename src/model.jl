@@ -70,7 +70,7 @@ function add_path!(m::Model{T}, source::Union{T,Symbol}, sink::Union{Array{T,1},
     m.dag[source] = NamedTuple{(:states, :weights),Tuple{Array{T,1},Weights}}((sink, w))
     for s in sink
         if exposed(s)
-            push!(m.susceptible, source)
+push!(m.susceptible, source)
             break
         end
     end
@@ -169,7 +169,7 @@ function Base.rand(rng::AbstractRNG, sp::SamplerModel{<:StateType})
     while lo < hi
         mid = (lo + hi) >> 1
         if (support[mid]._end >= time(s))
-            hi = mid
+    hi = mid
         else
             lo = mid + 1
         end
@@ -196,7 +196,7 @@ function Base.rand(rng::AbstractRNG, sp::SamplerModel{<:StateType})
     while lo < hi
         mid = (lo + hi) >> 1
         if (support[mid]._cum >= state_support_time)
-            hi = mid
+    hi = mid
         else
             lo = mid + 1
         end

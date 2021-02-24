@@ -3,10 +3,6 @@ quiet = length(ARGS) > 0 && ARGS[1] == "-q"
 coverage = length(ARGS) > 0 && ARGS[1] == "-c"
 anyerrors = false
 
-if !("$(@__DIR__)/../src"   in LOAD_PATH)
-    pushfirst!(LOAD_PATH, "$(@__DIR__)/../src")
-end
-
 using Tseir
 
 if !coverage
@@ -14,6 +10,7 @@ if !coverage
     my_tests = [
         "individual.jl",
         "population.jl",
+        "outbreak.jl",
         "model.jl",
         "simulator.jl"
     ]

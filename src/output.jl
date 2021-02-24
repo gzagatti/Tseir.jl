@@ -1,4 +1,4 @@
-basetype(::Individual{T}) where {T <: StateType} = T
+basetype(::Outbreak{T}) where {T <: StateType} = T
 
 """
    collect_results!(results::Dict{Tuple{Int32, Int32,Int32},Float64},
@@ -10,38 +10,33 @@ regular intervals starting from `t0`. The total number of records is added to
 the results with a given `weight`.
 """
 function collect_results!(results::Dict{Symbol,Dict{K,Float64} where K},
-   p::Population, t0::Int32, interval::Int32, weight::Float64)
+   o::Outbreak, t0::Int32, interval::Int32, weight::Float64)
    # round to nearest interval from the bottom, eg. if t0 is 16:17:35 and we
    # have an interval equal to 10 minutes then we round t0 to 16:10:00
     t0 = t0 - (t0 % interval)
-    for i in p
-        if type(state(i)) == typemax(basetype(i))
-            # round to the nearest interval from the top, eg. if infection_time is
-            # 16:17:35 and we have an interval equal to 10 minutes then we round
-            # the infection_time to 16:20:00
-            println(time(infection(i)))
-            println(t0)
-            infection_time = time(infection(i))
-            infection_time = (infection_time + interval - (infection_time % interval)) - t0
+    for (id, states) in o
+        # round to the nearest interval from the top, eg. if infection_time is
+        # 16:17:35 and we have an interval equal to 10 minutes then we round
+        # the infection_time to 16:20:00
+        infection_time = time(infection(o, id))
+        infection_time = (infection_time + interval - (infection_time % interval)) - t0
 
-            infection_location = location(infection(i))
-            infection_source = source(infection(i))
+        infection_location = location(infection(o, id))
+        infection_source = source(infection(o, id))
 
-            if !haskey(results[:infection], (infection_time, infection_source, infection_location))
-                results[:infection][(infection_time, infection_source, infection_location)] = 1 * weight
-            else
-                results[:infection][(infection_time, infection_source, infection_location)] += 1 * weight
-            end
+        if !haskey(results[:infection], (infection_time, infection_source, infection_location))
+            results[:infection][(infection_time, infection_source, infection_location)] = 1 * weight
+        else
+            results[:infection][(infection_time, infection_source, infection_location)] += 1 * weight
+        end
 
-            recovery_time = time(state(i))
-            recovery_time = (recovery_time + interval - (recovery_time % interval)) - t0
+        recovery_time = time(state(o, id))
+        recovery_time = (recovery_time + interval - (recovery_time % interval)) - t0
 
-            if !haskey(results[:recovery], recovery_time)
-                results[:recovery][recovery_time] = 1 * weight
-            else
-                results[:recovery][recovery_time] += 1 * weight
-            end
-
+        if !haskey(results[:recovery], recovery_time)
+            results[:recovery][recovery_time] = 1 * weight
+        else
+            results[:recovery][recovery_time] += 1 * weight
         end
     end
     return results
@@ -52,7 +47,7 @@ end
 
 Save the simulation results as an HDF5 file.
 """
-function save(filename, results::Dict{Symbol,Dict{K,Float64} where K}, params::Dict{String, Any})
+function save(filename, results::Dict{Symbol,Dict{K,Float64} where K}, params::Dict{String,Any})
 
     infection_time = Array{Int32,1}(undef, length(results[:infection]))
     infection_source = Array{Int32,1}(undef, length(results[:infection]))
@@ -83,7 +78,7 @@ function save(filename, results::Dict{Symbol,Dict{K,Float64} where K}, params::D
         write(file, "recovery/value", recovery_amount)
 
         for (k, v) in params
-           write(file, "param/$(k)", v)
+            write(file, "param/$(k)", v)
         end
 
     end
@@ -95,7 +90,7 @@ end
 
 Save the simulation results as an HDF5 file.
 """
-function save(conn::LibPQ.Connection, results::Dict{Symbol,Dict{K,Float64} where K}, params::Dict{String, Any})
+function save(conn::LibPQ.Connection, results::Dict{Symbol,Dict{K,Float64} where K}, params::Dict{String,Any})
 
     params_query = LibPQ.prepare(conn, "SELECT key FROM simulation.params WHERE params = \$1;")
     params_result = LibPQ.execute(params_query, (JSON.json(params),))
@@ -120,8 +115,8 @@ function save(conn::LibPQ.Connection, results::Dict{Symbol,Dict{K,Float64} where
     res_params_key = Array{Int32,1}()
     res_metric = Array{String,1}()
     res_value = Array{Float64,1}()
-    res_location = Array{Union{Int32, Missing},1}()
-    res_source = Array{Union{Int32, Missing},1}()
+    res_location = Array{Union{Int32,Missing},1}()
+    res_source = Array{Union{Int32,Missing},1}()
     res_elapsed = Array{Int32,1}()
 
     for (ix, (k, v)) in enumerate(results[:infection])
@@ -129,7 +124,7 @@ function save(conn::LibPQ.Connection, results::Dict{Symbol,Dict{K,Float64} where
         push!(res_metric, "infection")
         push!(res_value, v)
         if k[2] == typemax(Int32)
-           push!(res_source, missing)
+            push!(res_source, missing)
         else
             push!(res_source, k[2])
         end

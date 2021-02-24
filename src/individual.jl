@@ -5,13 +5,9 @@ The individual is the basic unit of our model. We keep track of its infection
 status and details regarding its infection event. We also keep track of all
 its contact events and all of its transitions between coordinates sets.
 """
-mutable struct Individual{T <: StateType}
+mutable struct Individual
 
     id::Int32
-
-    state::State{T}
-    previous_state::State{T}
-    infection::Union{State{T},Nothing}
 
     transition_stmt::LibPQ.Statement
     contact_stmt::LibPQ.Statement
@@ -19,28 +15,23 @@ mutable struct Individual{T <: StateType}
     transition_list::Array{Interval}
     contact_list::Dict{Int32,Array{Interval}}
 
-    function Individual{T}(id) where {T <: StateType}
-        self = new{T}()
-        self.id = Int32(id)
-        self.state = State(typemin(T))
-        self.previous_state = self.state
-        self.infection = nothing
-        return self
+    function Individual(id)
+        return new(id)
     end
 
-    function Individual{T}(id, transition_list::Array{Interval}) where {T <: StateType}
-        self = Individual{T}(id)
+    function Individual(id, transition_list::Array{Interval})
+        self = Individual(id)
         cat_transition!(self, transition_list)
     end
 
-    function Individual{T}(id, transition_stmt::LibPQ.Statement) where {T <: StateType}
-        self = Individual{T}(id)
+    function Individual(id, transition_stmt::LibPQ.Statement)
+        self = Individual(id)
         cat_transition!(self, transition_stmt)
         return self
     end
 
-    function Individual{T}(id, transition_stmt::LibPQ.Statement, contact_stmt::LibPQ.Statement) where {T <: StateType}
-        self = Individual{T}(id)
+    function Individual(id, transition_stmt::LibPQ.Statement, contact_stmt::LibPQ.Statement) where {T <: StateType}
+        self = Individual(id)
         self.transition_stmt = transition_stmt
         self.contact_stmt = contact_stmt
         return self
@@ -48,11 +39,8 @@ mutable struct Individual{T <: StateType}
 
 end
 
-function Base.show(io::IO, i::Individual{T}) where {T <: StateType}
-    print(io, "Individual{", T, "}(", i.id, ", ", type(state(i)), " state, ")
-    if time(infection(i)) < typemax(Int32)
-        print(io, time(infection(i)), " infection time, ")
-    end
+function Base.show(io::IO, i::Individual)
+    print(io, "Individual(", i.id, ", ")
     if isdefined(i, :contact_list)
         print(io, length(i.contact_list), " contact(s) and ")
     else
@@ -151,6 +139,8 @@ function contacts(i::Individual)
                 push_contact!(i, otherid, interval_start, interval_end)
             end
             sort_contacts!(i)
+        else
+            i.contact_list = Dict{Int32,Array{Interval,1}}()
         end
     end
     return i.contact_list
@@ -165,95 +155,9 @@ function transitions(i::Individual)
     if !isdefined(i, :transition_list)
         if isdefined(i, :transition_stmt)
             cat_transition!(i, i.transition_stmt)
+        else
+            i.transition_list = Array{Interval,1}()
         end
     end
     return i.transition_list
-end
-
-"""
-   state(i::Individual)
-
-Get individual `i` current state.
-"""
-function state(i::Individual)
-    return i.state
-end
-
-"""
-   previous_state(i::Individual)
-
-Get individual `i` previous state.
-"""
-function previous_state(i::Individual)
-    return i.previous_state
-end
-
-"""
-   infection(i::Individual)
-
-Get individual `i` exposed state.
-"""
-function infection(i::Individual)
-    return i.infection
-end
-
-"""
-   can_infect(i::Individual, m::Model)
-
-Returns wether individual `i` can be infected.
-"""
-function can_infect(i::Individual{T}, m::Model{T}) where {T <: StateType}
-    return type(state(i)) in m.susceptible || type(i.previous_state) in m.susceptible
-end
-
-"""
-   reset!(i::Individual{T}) where {T<:StateType}
-
-Reset individual `i` infection status to the first state and reset all
-infection parameters.
-"""
-function reset!(i::Individual{T}) where {T <: StateType}
-    i.state = State(typemin(T))
-    i.previous_state = i.state
-    i.infection = nothing
-end
-
-"""
-   infect!(i::Individual{T}, t::Number, source::Number)
-
-Infect individual `i`. What an infection is depends on the `StateType` which
-means the function needs to be defined for each `StateType`.
-"""
-function infect!(i::Individual{T}, t::Number, source::Number) where {T <: StateType} end
-
-"""
-   advance!(i::Individual, m::Model, [t::Number, s::Number])
-
-Advance individual `i` state given model `m`.
-
-If no time `t` and `source`, the next state time is sampled accordingly.
-"""
-function advance!(i::Individual, m::Model)
-    i.previous_state = i.state
-    i.state = advance(m, state(i))
-    if exposed(type(i.state))
-        i.infection = i.state
-    end
-end
-
-function advance!(i::Individual, m::Model, t::Number, s::Number)
-    i.previous_state = i.state
-    i.state = advance(m, state(i), t, s)
-    if exposed(type(i.state))
-        i.infection = i.state
-    end
-end
-
-"""
-    rewind!(i::Individual)
-
-Rewind individual `i` state.
-"""
-function rewind!(i::Individual)
-    i.state = i.previous_state
 end

@@ -1,4 +1,4 @@
-if !("$(@__DIR__)/../src"   in LOAD_PATH)
+if !("$(@__DIR__)/../src"    in LOAD_PATH)
     pushfirst!(LOAD_PATH, "$(@__DIR__)/../src")
 end
 
@@ -10,7 +10,7 @@ using DotEnv
 using Printf
 using Memento
 using ArgParse
-using Distributions: Exponential
+using Distributions:Exponential
 
 using RandomNumbers.PCG
 
@@ -18,7 +18,7 @@ basetype(::Model{T}) where {T <: StateType} = T
 
 function main(args)
 
-    params = Dict{String, Any}()
+    params = Dict{String,Any}()
 
     if args["model"] == "si"
         m = SI
@@ -29,18 +29,18 @@ function main(args)
     end
 
     β = args["beta"]
-    set_interevent_distribution!(m, :S, Exponential(1/β))
+    set_interevent_distribution!(m, :S, Exponential(1 / β))
     params["beta"] = @sprintf "%0.4e" β
 
     θ = args["theta"]
     if args["model"] in ["seir"]
-        set_interevent_distribution!(m, :E, Exponential(1/θ))
+        set_interevent_distribution!(m, :E, Exponential(1 / θ))
         params["theta"] = @sprintf "%0.4e" θ
     end
 
     γ = args["gamma"]
     if args["model"] in ["sir", "seir"]
-        set_interevent_distribution!(m, :I, Exponential(1/γ))
+        set_interevent_distribution!(m, :I, Exponential(1 / γ))
         params["gamma"] = @sprintf "%0.4e" γ
     end
 
@@ -68,7 +68,7 @@ function main(args)
 
     output_root = (
         args["output"] *
-        "/$(Dates.format(unix2datetime(args["start"]), "yyyy-mm-dd"))_"   *
+        "/$(Dates.format(unix2datetime(args["start"]), "yyyy-mm-dd"))_"    *
         "$(Dates.format(unix2datetime(args["end"]), "yyyy-mm-dd"))"
     )
     mkpath(output_root)
@@ -263,7 +263,7 @@ function cli()
         DotEnv.config(args["env-file"])
         ENV["WIFI_CONN"] =
             "postgres://agens:" *
-            "$(ENV["AGENS_PW"])@0.0.0.0:"   *
+            "$(ENV["AGENS_PW"])@0.0.0.0:"    *
             "$(ENV["AGENS_PORT"])/wifidb"
     end
 

@@ -1,11 +1,7 @@
-if !("$(@__DIR__)/../src"   in LOAD_PATH)
-    pushfirst!(LOAD_PATH, "$(@__DIR__)/../src")
-end
-
 using Test
 using Tseir
 using Random
-using StatsBase: Weights
+using StatsBase:Weights
 using DataStructures:extract_all!
 using Distributions:DiscreteUniform
 

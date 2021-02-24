@@ -4,12 +4,12 @@
 A population is a set of individuals. We can perform basic set operations
 by passing either an instance of an Individual or its id.
 """
-struct Population{T <: StateType} <: AbstractSet{Individual{T}}
-    dict::Dict{Int32,Individual{T}}
+struct Population <: AbstractSet{Individual}
+    dict::Dict{Int32,Individual}
 
-    Population{T}() where {T <: StateType} = new{T}(Dict{Int32,Individual{T}}())
-    Population(p::Array{Individual{T}}) where {T <: StateType} = new{T}(Dict{Int32,Individual{T}}(i.id => i for i in p))
-    Population(p::Population{T}) where {T <: StateType} = new{T}(Dict{Int32,Individual{T}}(i.id => i for i in p))
+    Population() = new(Dict{Int32,Individual}())
+    Population(p::Array{Individual}) = new(Dict{Int32,Individual}(i.id => i for i in p))
+    Population(p::Population) = new(Dict{Int32,Individual}(i.id => i for i in p))
 end
 
 Base.isempty(p::Population) = isempty(p.dict)
@@ -45,8 +45,6 @@ Base.rehash!(p::Population) = (Base.rehash!(p.dict); p)
 
 Base.iterate(p::Population, i...) = iterate(Base.ValueIterator(p.dict), i...)
 
-reset!(p::Population) = for i in p reset!(i) end
-
 """
     Eager initialize population
 
@@ -55,27 +53,27 @@ list of individual transitions and the second returns a list of contact events.
 
 This is an eager initialization as all contacts and transitions are pre-loaded.
 """
-function eager_init_population(T::Type{<:StateType}, transition_stmt::LibPQ.Statement, contact_stmt::LibPQ.Statement)
-    p = Population{T}()
+function eager_init_population(transition_stmt::LibPQ.Statement, contact_stmt::LibPQ.Statement)
+    p = Population()
     iter = ProgressBar(LibPQ.execute(contact_stmt))
     set_description(iter, "Filling contacts:")
     for contact_details in iter
         id, otherid, interval_start, interval_end = contact_details
         if !(id in p)
-            i = Individual{T}(id, transition_stmt)
+            i = Individual(id, transition_stmt)
             push!(p, i)
         end
         if !(otherid in p)
-            other = Individual{T}(otherid, transition_stmt)
+            other = Individual(otherid, transition_stmt)
             push!(p, other)
         end
         push_contact!(p[id], otherid, interval_start, interval_end)
     end
     iter = ProgressBar(p)
     set_description(iter, "Sorting contacts: ")
-    for i in iter
-        sort_contacts!(i)
-    end
+        for i in iter
+    sort_contacts!(i)
+end
     return p
 end
 
@@ -90,12 +88,12 @@ This is a lazy initialization as individuals are only initialized with contact
 and transition statements. The contact and transition list are only loaded when
 needed.
 """
-function lazy_init_population(T::Type{<:StateType}, id_stmt::LibPQ.Statement, transition_stmt::LibPQ.Statement, contact_stmt::LibPQ.Statement)
-    p = Population{T}()
+function lazy_init_population(id_stmt::LibPQ.Statement, transition_stmt::LibPQ.Statement, contact_stmt::LibPQ.Statement)
+    p = Population()
     for (id,) in LibPQ.execute(id_stmt)
-        i = Individual{T}(id, transition_stmt, contact_stmt)
+        i = Individual(id, transition_stmt, contact_stmt)
         push!(p, i)
-    end
+end
     return p
 end
 
@@ -272,7 +270,7 @@ function _heap_bubble_up!(ord::Base.Ordering, nodes::Vector{Individual},
         end
     end
 
-    if i != nd_id
+        if i != nd_id
         nodes[i] = nd
         nodemap[nd.id] = i
     end
@@ -330,13 +328,13 @@ function _heap_bubble_down!(ord::Base.Ordering, nodes::Vector{Individual},
                 i = il
             else
                 swapped = false
-            end
+    end
 
         end
 
     end
 
-    if i != nd_id
+        if i != nd_id
         @inbounds nodes[i] = nd
         @inbounds nodemap[nd.id] = i
     end

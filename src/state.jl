@@ -36,6 +36,7 @@ macro states(T::Union{Symbol,Expr}, syms...)
     namemap = Dict{basetype,Symbol}()
     valuemap = Dict{Symbol,basetype}()
     exposed = Set{basetype}()
+    first_exposed = nothing
     infectious = Set{basetype}()
     lo = hi = 0
     i = zero(basetype)
@@ -100,6 +101,9 @@ macro states(T::Union{Symbol,Expr}, syms...)
             hi = max(hi, i)
         end
         if isexposed
+            if length(exposed) == 0
+                first_exposed = i
+            end
             push!(exposed, i)
         end
         if isinfectious
@@ -130,6 +134,15 @@ macro states(T::Union{Symbol,Expr}, syms...)
         Base.convert(::Type{$(esc(typename))}, x::Symbol) = $(esc(typename))(x)
         Tseir.exposed(x::$(esc(typename))) = $(basetype)(x) in $(esc(exposed))
         Tseir.infectious(x::$(esc(typename))) = $(basetype)(x) in $(esc(infectious))
+        if length($(esc(exposed))) > 0
+            s = $(esc(typename))($(esc(first_exposed)))
+            function Tseir.infect!(o::Outbreak{$(esc(typename))}, i::Individual, t::Number, source::Number)
+                new_state = State(s, t, source)
+                o.states[i.id] = [new_state]
+                o.infections[i.id] = 1
+                assign_event_location!(infection(o, i), transitions(i))
+            end
+        end
     end
     push!(blk.args, :nothing)
     blk.head = :toplevel
@@ -179,6 +192,8 @@ function Base.:(==)(x::State, y::State)
    )
     return out
 end
+
+Base.copy(s::State) = State(s.type, s.time, s.location, s.source, s.migration)
 
 function State(type::T) where {T <: StateType}
     return State(type, typemax(Int32), typemax(Int32), typemax(Int32), typemax(Int32))

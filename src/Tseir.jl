@@ -12,23 +12,16 @@ module Tseir
     import LibPQ
     import Core.Intrinsics.bitcast
 
-    export
-
-        Individual,
+    export Individual,
         Population,
         PopulationHeap,
         Model,
+        Outbreak,
         State,
         StateType,
         Interval,
 
         # methods for Individual
-        reset!,
-        advance!,
-        infect!,
-        state,
-        infection,
-        can_infect,
         contacts,
         transitions,
 
@@ -39,12 +32,21 @@ module Tseir
         # method for PopulationHeap
         update!,
 
-        # methods for model
+        # methods for Model
         set_rng!,
         set_interevent_distribution!,
         add_path!,
         interevent_distribution,
         advance,
+
+        # methods for Outbreak
+        advance!,
+        infect!,
+        rewind!,
+        state,
+        previous_state,
+        infection,
+        susceptible,
 
         # methods for StateType
         @states,
@@ -60,8 +62,8 @@ module Tseir
         assign_event_location!,
 
         # excutables
-        run!,
-        sweep!,
+        run,
+        sweep,
         collect_results!,
         save,
 
@@ -78,6 +80,7 @@ module Tseir
     include("./state.jl")
     include("./model.jl")
     include("./individual.jl")
+    include("./outbreak.jl")
     include("./population.jl")
     include("./simulator.jl")
     include("./output.jl")
