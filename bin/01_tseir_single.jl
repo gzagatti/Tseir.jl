@@ -20,6 +20,8 @@ function main(args)
 
     params = Dict{String,Any}()
 
+    params["model"] = args["model"]
+
     if args["model"] == "si"
         m = SI
     elseif args["model"] == "sir"
