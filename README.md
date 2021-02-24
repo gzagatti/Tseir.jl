@@ -7,7 +7,7 @@ The simulator is developed as a Julia package.
 
 ## Similar projects
 
-*[Pathogen.jl](https://github.com/jangevaare/Pathogen.jl)*: Simulation,
+* *[Pathogen.jl](https://github.com/jangevaare/Pathogen.jl)*: Simulation,
 visualization, and inference tools for modelling the spread of infectious
 diseases with Julia.
     * keeps a list of transmission and event rates to sample the next event.
