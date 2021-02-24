@@ -1,5 +1,3 @@
-basetype(::Model{T}) where {T <: StateType} = T
-
 """
    sweep!(p::Population, m::Model, epidemics_start::Number,
       epidemics_end::Number, N::Integer, seed::Integer)
@@ -15,10 +13,7 @@ function sweep(p::Population, m::Model, epidemics_start::Number,
                 epidemics_end::Number, N::Integer, save_interval::Number,
                 i0::Union{Individual,Nothing}=nothing)
 
-    results = Dict(
-      :infection => Dict{Tuple{Int32,Int32,Int32},Float64}(),
-      :recovery => Dict{Int32,Float64}()
-    )
+    results = Dict{Tuple, Any}()
 
     iter = ProgressBar(1:N)
     set_description(iter, "Sweep:      ")

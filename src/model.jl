@@ -1,5 +1,3 @@
-using Random: GLOBAL_RNG, AbstractRNG, default_rng, Sampler, Repetition
-
 """
    Model{T<:StateType}([r::AbstractRNG])
 
@@ -27,13 +25,15 @@ function Model{T}(r::AbstractRNG) where {T <: StateType}
 end
 
 function Model{T}() where {T <: StateType}
-    r = default_rng()
+    r = Random.default_rng()
     return Model{T}(r)
 end
 
 function Base.show(io::IO, m::Model{T}) where {T <: StateType}
     print(io, "Model{", T, "}")
 end
+
+basetype(::Model{T}) where {T <: StateType} = T
 
 """
    set_rng!(m::Model, r::AbstractRNG)
@@ -121,16 +121,16 @@ function advance(m::Model, s::State, t::Int32, source::Int32)
     return State(next_state_type(m, type(s)), t, source)
 end
 
-struct SamplerModel{T <: StateType} <: Sampler{Float64}
+struct SamplerModel{T <: StateType} <: Random.Sampler{Float64}
     m::Model{T}
     s::State{T}
     support::Union{Array{Interval,1},Nothing}
 end
 
-function Sampler(::Type{<:AbstractRNG}, m::Model{T}, s::State{T}, support::Union{Array{Interval,1},Nothing}, ::Repetition) where {T <: StateType}
+function Sampler(::Type{<:AbstractRNG}, m::Model{T}, s::State{T}, support::Union{Array{Interval,1},Nothing}, ::Random.Repetition) where {T <: StateType}
     return SamplerModel{T}(m, s, support)
 end
-Sampler(rng::AbstractRNG, m::Model{T}, s::State{T}, support::Union{Array{Interval,1},Nothing}, r::Repetition) where {T <: StateType} = Sampler(typeof(rng), m, s, support, r)
+Sampler(rng::AbstractRNG, m::Model{T}, s::State{T}, support::Union{Array{Interval,1},Nothing}, r::Random.Repetition) where {T <: StateType} = Sampler(typeof(rng), m, s, support, r)
 
 
 """

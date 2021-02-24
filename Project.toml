@@ -4,12 +4,18 @@ authors = ["gzagatti <gzagatti@users.noreply.github.com>"]
 version = "0.1.0"
 
 [deps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+DotEnv = "4dc1fcf4-5e3b-5448-94ab-0c38ec0385c1"
 FilePaths = "8fc22ac5-c921-52a6-82fd-178b2807b824"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 LibPQ = "194296ae-ab2e-5f79-8cd4-7183a0a5a0d1"
+Memento = "f28f55f0-a522-5efc-85c2-fe41dfb9b2d9"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 ProgressBars = "49802e3a-d2f1-5c88-81d8-b72133a6f568"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+RandomNumbers = "e6cf234a-135c-5ec9-84dd-332b85af5143"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"

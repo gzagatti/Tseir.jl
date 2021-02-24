@@ -3,6 +3,7 @@ module Tseir
     using Base
     using HDF5
     using Random
+    using Random: AbstractRNG
     using StatsBase
     using ProgressBars
     using DataStructures:AbstractMutableHeap
@@ -66,6 +67,7 @@ module Tseir
         sweep,
         collect_results!,
         save,
+        simulate,
 
         # models
         SI,
@@ -87,5 +89,6 @@ module Tseir
     include("./models/si.jl")
     include("./models/sir.jl")
     include("./models/seir.jl")
+    include("./bin/main.jl")
 
 end

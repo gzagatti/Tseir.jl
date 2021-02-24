@@ -148,8 +148,7 @@ end
         set_interevent_distribution!(SIR, StateSIR(:S), DiscreteUniform(1, 1))
         set_interevent_distribution!(SIR, StateSIR(:I), DiscreteUniform(2, 2))
         results = Tseir.sweep(p, SIR, 50, 55, 2, 1)
-        @test results[:infection] == Dict((1, typemax(Int32), 1) => 1.0, (2, typemax(Int32), 1) => 1.0)
-        @test results[:recovery] == Dict(4 => 1.0, 3 => 1.0)
+        @test results == Dict{Tuple, Any}((:infection, 1, typemax(Int32), 1) => 1.0, (:infection, 2, typemax(Int32), 1) => 1.0, (:recovery, 4) => 1.0, (:recovery, 3) => 1.0)
     end
 
 end
