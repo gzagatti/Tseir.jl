@@ -1,7 +1,7 @@
 name = "Tseir"
 uuid = "4f6b9050-0f4b-40cc-ab86-f9e0d0f9d775"
 authors = ["gzagatti <gzagatti@users.noreply.github.com>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
