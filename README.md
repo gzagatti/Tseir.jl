@@ -1,9 +1,11 @@
 # Tseir.jl: Temporal SIR
 
+![Demo](demo.gif)
+
 Temporal susceptible -> exposed -> infected -> recovered (Tseir) Julia simulator, based on 
 [pholme/tsir](https://github.com/pholme/tsir).
 
-The simulator is developed as a Julia package.
+The simulator is developed as a Julia package. It is designed to interoperate with [Cofi](https://github.com/NUS-IDS/cofi), a Wi-Fi data warehouse for contact tracing.
 
 ## Similar projects
 
